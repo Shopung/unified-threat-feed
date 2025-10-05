@@ -1,0 +1,23 @@
+name: Phase3 Update Feeds
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  update_feeds:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        script: ["scripts/fetch_hf.py", "scripts/fetch_otx.py", "scripts/fetch_abuseipdb.py", "scripts/fetch_ipinfo.py", "scripts/fetch_whois.py"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run threat feed script
+        run: python ${{ matrix.script }}
