@@ -1,0 +1,42 @@
+{"timestamp": "2025-10-05T09:00:07.806351", "level": "INFO", "message": "Python found: Python 3.11.9"}
+{"timestamp": "2025-10-05T09:00:07.810050", "level": "INFO", "message": "pip found: pip 24.0 from C:\\Users\\shane\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\pip (python 3.11)"}
+{"timestamp": "2025-10-05T09:00:07.810050", "level": "INFO", "message": "Creating requirements.txt..."}
+{"timestamp": "2025-10-05T09:00:07.810050", "level": "INFO", "message": "requirements.txt created with packages: requests, python-whois, jq"}
+{"timestamp": "2025-10-05T09:00:07.810050", "level": "INFO", "message": "Installing Python packages from requirements.txt..."}
+{"timestamp": "2025-10-05T09:00:10.691415", "level": "INFO", "message": "Python packages installed successfully"}
+{"timestamp": "2025-10-05T09:00:10.691537", "level": "INFO", "message": "Starting Phase 1: GitHub Repo setup..."}
+{"timestamp": "2025-10-05T09:00:10.835449", "level": "INFO", "message": "Git repo already initialized"}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "No changes to commit"}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Creating Phase 2 directories..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Creating scripts/fetch_and_parse.py..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Creating placeholder threat feed scripts..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "WARNING", "message": ".env file was missing. Created from .env.example. Please update it with real API keys."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Validating environment variables..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "WARNING", "message": "Missing environment variables: OTX_API_KEY, ABUSEIPDB_API_KEY, IPINFO_API_KEY, WHOIS_API_KEY. Make sure to fill them in .env file."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Running threat feed scripts in parallel..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Attempt 1: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Attempt 1: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:10.950006", "level": "INFO", "message": "Attempt 1: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:11.105659", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed3.sh\n"}
+{"timestamp": "2025-10-05T09:00:11.105659", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed1.sh\n"}
+{"timestamp": "2025-10-05T09:00:11.105659", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed2.sh\n"}
+{"timestamp": "2025-10-05T09:00:11.105659", "level": "INFO", "message": "Retrying in 5s..."}
+{"timestamp": "2025-10-05T09:00:11.105659", "level": "INFO", "message": "Retrying in 5s..."}
+{"timestamp": "2025-10-05T09:00:11.107164", "level": "INFO", "message": "Retrying in 5s..."}
+{"timestamp": "2025-10-05T09:00:16.107468", "level": "INFO", "message": "Attempt 2: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:16.108009", "level": "INFO", "message": "Attempt 2: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:16.110541", "level": "INFO", "message": "Attempt 2: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:16.216214", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed2.sh\n"}
+{"timestamp": "2025-10-05T09:00:16.216214", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed3.sh\n"}
+{"timestamp": "2025-10-05T09:00:16.218212", "level": "INFO", "message": "Retrying in 25s..."}
+{"timestamp": "2025-10-05T09:00:16.218212", "level": "INFO", "message": "Retrying in 25s..."}
+{"timestamp": "2025-10-05T09:00:16.218212", "level": "INFO", "message": "Retrying in 25s..."}
+{"timestamp": "2025-10-05T09:00:41.219132", "level": "INFO", "message": "Attempt 3: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:41.219680", "level": "INFO", "message": "Attempt 3: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:41.219680", "level": "INFO", "message": "Attempt 3: Running run_script..."}
+{"timestamp": "2025-10-05T09:00:41.326173", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed1.sh\n"}
+{"timestamp": "2025-10-05T09:00:41.326173", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed3.sh\n"}
+{"timestamp": "2025-10-05T09:00:41.326173", "level": "ERROR", "message": "run_script failed: Command failed: bash scripts/fetch_feed2.sh\n"}
+{"timestamp": "2025-10-05T09:00:41.326173", "level": "ERROR", "message": "All retries for run_script failed"}
+{"timestamp": "2025-10-05T09:00:41.326173", "level": "ERROR", "message": "All retries for run_script failed"}
+{"timestamp": "2025-10-05T09:00:41.326173", "level": "ERROR", "message": "All retries for run_script failed"}

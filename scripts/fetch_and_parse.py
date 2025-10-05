@@ -2,30 +2,46 @@ import os
 import json
 import requests
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import multiprocessing
 
 RAW_DIR = "../feeds/raw"
 PARSED_DIR = "../feeds/parsed"
 os.makedirs(RAW_DIR, exist_ok=True)
 os.makedirs(PARSED_DIR, exist_ok=True)
 
-FEEDS = [
-    {"name": "OTX", "url": "https://otx.alienvault.com/api/v1/indicators/export?type=IPv4",
-     "headers": {"X-OTX-API-KEY": os.getenv("OTX_API_KEY")}, "type": "IP"},
-    {"name": "AbuseIPDB", "url": "https://api.abuseipdb.com/api/v2/blacklist",
-     "headers": {"Key": os.getenv("ABUSEIPDB_API_KEY")}, "type": "IP"}
-]
+def load_feeds_from_env():
+    feeds = []
+    for k, v in os.environ.items():
+        if k.endswith("_API_KEY") and v.strip():
+            name = k.replace("_API_KEY", "")
+            url = os.environ.get(f"{name}_URL", None)
+            if url:
+                feeds.append({
+                    "name": name,
+                    "url": url,
+                    "headers": {"Authorization": v},
+                    "type": os.environ.get(f"{name}_TYPE", "IP")
+                })
+    return feeds
+
+FEEDS = load_feeds_from_env()
 
 def fetch_feed(feed):
+    api_header = next(iter(feed.get("headers", {}).values()), None)
+    if not api_header:
+        print(f"[WARNING] Skipping {feed['name']} because API key is missing.")
+        return []
     print(f"Fetching {feed['name']}...")
     try:
-        response = requests.get(feed["url"], headers=feed.get("headers", {}))
+        response = requests.get(feed['url'], headers=feed.get('headers', {}))
         response.raise_for_status()
         filename = f"{RAW_DIR}/{feed['name']}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
         with open(filename, "w") as f:
             f.write(response.text)
-        return response.json() if "application/json" in response.headers.get("Content-Type","") else response.text
+        return response.json() if "application/json" in response.headers.get("Content-Type", "") else response.text
     except Exception as e:
-        print(f"Error fetching {feed['name']}: {e}")
+        print(f"[ERROR] Fetching {feed['name']} failed: {e}")
         return []
 
 def enrich_ip(ip):
@@ -41,25 +57,11 @@ def enrich_ip(ip):
             "isp": " ".join(data.get("org", "").split()[1:]) if data.get("org") else None
         }
     except Exception as e:
-        print(f"Error enriching IP {ip}: {e}")
-        return {}
-
-def enrich_domain(domain):
-    whois_api_key = os.getenv("WHOIS_API_KEY")
-    if not whois_api_key:
-        return {}
-    try:
-        r = requests.get(f"https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey={whois_api_key}&domainName={domain}&outputFormat=JSON")
-        data = r.json()
-        registrant = data.get("WhoisRecord", {}).get("registryData", {}).get("registrant", {})
-        creation_date = data.get("WhoisRecord", {}).get("registryData", {}).get("registryCreationDate")
-        return {"whois": {"registrant": registrant.get("name"), "creation_date": creation_date}}
-    except Exception as e:
-        print(f"Error enriching domain {domain}: {e}")
+        print(f"[ERROR] Enriching IP {ip} failed: {e}")
         return {}
 
 def normalize_indicator(feed_name, indicator, i_type="IP"):
-    enriched = enrich_ip(indicator) if i_type=="IP" else enrich_domain(indicator) if i_type=="domain" else {}
+    enriched = enrich_ip(indicator) if i_type == "IP" else {}
     return {
         "indicator": indicator,
         "type": i_type,
@@ -81,16 +83,35 @@ def deduplicate(data):
             seen.add(key)
     return unique
 
-def main():
+def process_feed(feed):
     all_indicators = []
-    for feed in FEEDS:
-        raw_data = fetch_feed(feed)
-        if isinstance(raw_data, list):
-            for i in raw_data:
-                all_indicators.append(normalize_indicator(feed["name"], i, feed["type"]))
-        elif isinstance(raw_data, dict) and "data" in raw_data:
-            for i in raw_data["data"]:
-                all_indicators.append(normalize_indicator(feed["name"], i.get("ipAddress",""), feed["type"]))
+    raw_data = fetch_feed(feed)
+    if isinstance(raw_data, list):
+        for i in raw_data:
+            all_indicators.append(normalize_indicator(feed["name"], i, feed["type"]))
+    elif isinstance(raw_data, dict) and "data" in raw_data:
+        for i in raw_data["data"]:
+            all_indicators.append(normalize_indicator(feed["name"], i.get("ipAddress", ""), feed["type"]))
+    return all_indicators
+
+def main():
+    if not FEEDS:
+        print("[INFO] No feeds found in .env. Please add API keys and optional URLs (NAME_URL) and TYPE (NAME_TYPE).")
+        return
+
+    all_indicators = []
+    max_workers = min(len(FEEDS), multiprocessing.cpu_count())
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(process_feed, feed): feed for feed in FEEDS}
+        for future in as_completed(futures):
+            feed = futures[future]
+            try:
+                result = future.result()
+                all_indicators.extend(result)
+                print(f"[INFO] {feed['name']} processed with {len(result)} indicators")
+            except Exception as e:
+                print(f"[ERROR] Processing feed {feed['name']} failed: {e}")
+
     all_indicators = deduplicate(all_indicators)
     parsed_file = f"{PARSED_DIR}/parsed_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
     with open(parsed_file, "w") as f:
