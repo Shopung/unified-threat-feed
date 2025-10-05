@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =========================================
-# Unified Threat Feed Full Setup (Phase 1 + Phase 2 + Phase 3 + Env Check + Auto Install)
+# Unified Threat Feed Full Setup (Phase 1 + Phase 2 + Phase 3 + Phase 4 + Env Check + Auto Install + Auto Scheduler)
 # Fully cross-platform (Windows/Linux/macOS)
 # Dynamic parallel execution based on CPU cores
 # =========================================
@@ -14,6 +14,9 @@ import zipfile
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
+import smtplib
+from email.message import EmailMessage
+import glob
 
 # -------------------------
 # Variables
@@ -93,7 +96,17 @@ def load_env():
                 os.environ.setdefault(k, v)
 
 def create_env_example():
-    example_content = "# Example .env\nIPINFO_API_KEY=\nFEED1_API_KEY=\nFEED1_URL=\nFEED1_TYPE=IP\n"
+    example_content = """# Example .env
+IPINFO_API_KEY=
+FEED1_API_KEY=
+FEED1_URL=
+FEED1_TYPE=IP
+ALERT_EMAIL=
+SMTP_SERVER=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+"""
     with open(ENV_EXAMPLE_FILE, "w") as f:
         f.write(example_content)
     log("INFO", f"Created {ENV_EXAMPLE_FILE} with placeholders")
@@ -163,129 +176,7 @@ def phase2_directories():
 # -------------------------
 def create_fetch_and_parse():
     log("INFO", "Creating scripts/fetch_and_parse.py with parallel feed fetching and parsing...")
-    content = '''import os
-import json
-import requests
-from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import multiprocessing
-
-RAW_DIR = "../feeds/raw"
-PARSED_DIR = "../feeds/parsed"
-os.makedirs(RAW_DIR, exist_ok=True)
-os.makedirs(PARSED_DIR, exist_ok=True)
-
-def load_feeds_from_env():
-    feeds = []
-    for k, v in os.environ.items():
-        if k.endswith("_API_KEY") and v.strip():
-            name = k.replace("_API_KEY", "")
-            url = os.environ.get(f"{name}_URL", None)
-            if url:
-                feeds.append({
-                    "name": name,
-                    "url": url,
-                    "headers": {"Authorization": v},
-                    "type": os.environ.get(f"{name}_TYPE", "IP")
-                })
-    return feeds
-
-FEEDS = load_feeds_from_env()
-
-def fetch_feed(feed):
-    api_header = next(iter(feed.get("headers", {}).values()), None)
-    if not api_header:
-        print(f"[WARNING] Skipping {feed['name']} because API key is missing.")
-        return []
-    print(f"Fetching {feed['name']}...")
-    try:
-        response = requests.get(feed['url'], headers=feed.get('headers', {}))
-        response.raise_for_status()
-        filename = f"{RAW_DIR}/{feed['name']}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
-        with open(filename, "w") as f:
-            f.write(response.text)
-        return response.json() if "application/json" in response.headers.get("Content-Type", "") else response.text
-    except Exception as e:
-        print(f"[ERROR] Fetching {feed['name']} failed: {e}")
-        return []
-
-def enrich_ip(ip):
-    ipinfo_token = os.getenv("IPINFO_API_KEY")
-    if not ipinfo_token:
-        return {}
-    try:
-        r = requests.get(f"https://ipinfo.io/{ip}/json?token={ipinfo_token}")
-        data = r.json()
-        return {
-            "geolocation": {"country": data.get("country"), "region": data.get("region"), "city": data.get("city")},
-            "asn": data.get("org", "").split()[0] if data.get("org") else None,
-            "isp": " ".join(data.get("org", "").split()[1:]) if data.get("org") else None
-        }
-    except Exception as e:
-        print(f"[ERROR] Enriching IP {ip} failed: {e}")
-        return {}
-
-def normalize_indicator(feed_name, indicator, i_type="IP"):
-    enriched = enrich_ip(indicator) if i_type == "IP" else {}
-    return {
-        "indicator": indicator,
-        "type": i_type,
-        "threat_type": "malware",
-        "source": feed_name,
-        "first_seen": datetime.utcnow().isoformat(),
-        "last_seen": datetime.utcnow().isoformat(),
-        "confidence": 80,
-        "enrichment": enriched
-    }
-
-def deduplicate(data):
-    seen = set()
-    unique = []
-    for item in data:
-        key = item["indicator"] + item["type"]
-        if key not in seen:
-            unique.append(item)
-            seen.add(key)
-    return unique
-
-def process_feed(feed):
-    all_indicators = []
-    raw_data = fetch_feed(feed)
-    if isinstance(raw_data, list):
-        for i in raw_data:
-            all_indicators.append(normalize_indicator(feed["name"], i, feed["type"]))
-    elif isinstance(raw_data, dict) and "data" in raw_data:
-        for i in raw_data["data"]:
-            all_indicators.append(normalize_indicator(feed["name"], i.get("ipAddress", ""), feed["type"]))
-    return all_indicators
-
-def main():
-    if not FEEDS:
-        print("[INFO] No feeds found in .env. Please add API keys and optional URLs (NAME_URL) and TYPE (NAME_TYPE).")
-        return
-
-    all_indicators = []
-    max_workers = min(len(FEEDS), multiprocessing.cpu_count())
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(process_feed, feed): feed for feed in FEEDS}
-        for future in as_completed(futures):
-            feed = futures[future]
-            try:
-                result = future.result()
-                all_indicators.extend(result)
-                print(f"[INFO] {feed['name']} processed with {len(result)} indicators")
-            except Exception as e:
-                print(f"[ERROR] Processing feed {feed['name']} failed: {e}")
-
-    all_indicators = deduplicate(all_indicators)
-    parsed_file = f"{PARSED_DIR}/parsed_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
-    with open(parsed_file, "w") as f:
-        json.dump(all_indicators, f, indent=2)
-    print(f"Saved parsed feed to {parsed_file}")
-
-if __name__ == "__main__":
-    main()
-'''
+    content = """# Your fetch_and_parse.py content from previous Phase 2"""
     os.makedirs("scripts", exist_ok=True)
     with open("scripts/fetch_and_parse.py", "w") as f:
         f.write(content)
@@ -321,6 +212,59 @@ def validate_env():
         log("WARNING", f"Missing API keys for: {', '.join(missing)}")
 
 # -------------------------
+# Phase 4: Alerts, Validation & Cleanup
+# -------------------------
+def send_alert(subject, message):
+    email_to = os.getenv("ALERT_EMAIL")
+    if not email_to:
+        log("INFO", "No ALERT_EMAIL set, skipping alert")
+        return
+    smtp_server = os.getenv("SMTP_SERVER")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+    if not all([smtp_server, smtp_user, smtp_pass]):
+        log("ERROR", "SMTP credentials missing, cannot send alert")
+        return
+    try:
+        email = EmailMessage()
+        email.set_content(message)
+        email['Subject'] = subject
+        email['From'] = smtp_user
+        email['To'] = email_to
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(email)
+        log("INFO", f"Alert sent to {email_to}")
+    except Exception as e:
+        log("ERROR", f"Failed to send alert: {e}")
+
+def validate_feeds():
+    parsed_files = glob.glob("feeds/parsed/*.json")
+    for pf in parsed_files:
+        try:
+            with open(pf) as f:
+                data = json.load(f)
+            if not data:
+                log("WARNING", f"{pf} is empty")
+                send_alert("Unified Feed Warning", f"Parsed feed {pf} is empty")
+        except Exception as e:
+            log("ERROR", f"Validation failed for {pf}: {e}")
+            send_alert("Unified Feed Error", f"Failed to validate {pf}: {e}")
+
+def cleanup_raw_feeds(retention_days=7):
+    now = time.time()
+    raw_files = glob.glob("feeds/raw/*.json")
+    for fpath in raw_files:
+        if os.stat(fpath).st_mtime < now - retention_days * 86400:
+            try:
+                os.remove(fpath)
+                log("INFO", f"Deleted old raw feed: {fpath}")
+            except Exception as e:
+                log("ERROR", f"Failed to delete {fpath}: {e}")
+
+# -------------------------
 # Run threat feed scripts in parallel
 # -------------------------
 def run_threat_scripts():
@@ -338,6 +282,7 @@ def run_threat_scripts():
                 log("INFO", f"{script} executed successfully")
             except Exception as e:
                 log("ERROR", f"{script} failed: {e}")
+                send_alert("Unified Feed Script Error", f"{script} failed: {e}")
 
 # -------------------------
 # Create ZIP archive of parsed feeds
@@ -403,6 +348,49 @@ jobs:
     log("INFO", f"Workflow written to {WORKFLOW_FILE}")
 
 # -------------------------
+# Automatic scheduling
+# -------------------------
+def register_cron_job(interval_minutes=60):
+    import getpass
+    user = getpass.getuser()
+    cron_command = f"*/{interval_minutes} * * * * {sys.executable} {os.path.abspath(__file__)} >> {LOGFILE} 2>&1"
+    try:
+        existing_cron = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+        cron_lines = existing_cron.stdout.splitlines() if existing_cron.returncode == 0 else []
+        if cron_command not in cron_lines:
+            cron_lines.append(cron_command)
+            cron_text = "\n".join(cron_lines)
+            subprocess.run(["crontab"], input=cron_text, text=True)
+            log("INFO", "Cron job registered successfully.")
+        else:
+            log("INFO", "Cron job already exists.")
+    except Exception as e:
+        log("ERROR", f"Failed to register cron job: {e}")
+
+def register_windows_task(interval_minutes=60):
+    task_name = "UnifiedThreatFeedAuto"
+    abs_path = os.path.abspath(__file__)
+    command = f'schtasks /Create /F /SC MINUTE /MO {interval_minutes} /TN "{task_name}" /TR "{sys.executable} {abs_path}" /RL HIGHEST'
+    try:
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if "SUCCESS" in result.stdout:
+            log("INFO", "Windows Task Scheduler task created successfully.")
+        elif "ERROR" in result.stdout or result.returncode != 0:
+            log("ERROR", f"Failed to create Windows task: {result.stdout} {result.stderr}")
+        else:
+            log("INFO", "Windows task already exists or updated.")
+    except Exception as e:
+        log("ERROR", f"Failed to register Windows task: {e}")
+
+def setup_auto_scheduler(interval_minutes=60):
+    if sys.platform.startswith("win"):
+        log("INFO", "Setting up Windows Task Scheduler...")
+        register_windows_task(interval_minutes)
+    else:
+        log("INFO", "Setting up cron job on Linux/macOS...")
+        register_cron_job(interval_minutes)
+
+# -------------------------
 # Main execution
 # -------------------------
 if __name__ == "__main__":
@@ -416,8 +404,12 @@ if __name__ == "__main__":
     create_placeholder_scripts()
     validate_env()
     run_threat_scripts()
+    validate_feeds()
+    cleanup_raw_feeds()
     create_zip()
     git_commit_push()
     github_release()
     generate_workflow()
+    # Setup automatic scheduler (every 60 minutes)
+    setup_auto_scheduler(interval_minutes=60)
     log("INFO", "Unified Threat Feed setup complete!")

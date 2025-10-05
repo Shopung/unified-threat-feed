@@ -1,0 +1,25 @@
+{"timestamp": "2025-10-05T09:50:31.262341", "level": "INFO", "message": "Python found: Python 3.11.9"}
+{"timestamp": "2025-10-05T09:50:31.262341", "level": "INFO", "message": "pip found: pip 24.0 from C:\\Users\\shane\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\pip (python 3.11)"}
+{"timestamp": "2025-10-05T09:50:31.262341", "level": "INFO", "message": "Creating requirements.txt..."}
+{"timestamp": "2025-10-05T09:50:31.262341", "level": "INFO", "message": "requirements.txt created with packages: requests, python-whois, jq"}
+{"timestamp": "2025-10-05T09:50:31.262341", "level": "INFO", "message": "Installing Python packages from requirements.txt..."}
+{"timestamp": "2025-10-05T09:50:32.239421", "level": "INFO", "message": "Python packages installed successfully"}
+{"timestamp": "2025-10-05T09:50:32.239421", "level": "INFO", "message": "Starting Phase 1: GitHub Repo setup..."}
+{"timestamp": "2025-10-05T09:50:32.375386", "level": "INFO", "message": "Git repo already initialized"}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "INFO", "message": "No changes to commit"}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "INFO", "message": "Creating Phase 2 directories..."}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "INFO", "message": "Creating scripts/fetch_and_parse.py with parallel feed fetching and parsing..."}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "INFO", "message": "Creating dynamic placeholder threat feed scripts..."}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "INFO", "message": "Running all threat feed scripts in parallel..."}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "ERROR", "message": "scripts/fetch_otx.py failed: bufsize must be an integer"}
+{"timestamp": "2025-10-05T09:50:32.495860", "level": "INFO", "message": "No ALERT_EMAIL set, skipping alert"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "ERROR", "message": "scripts/fetch_abuseipdb.py failed: bufsize must be an integer"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "INFO", "message": "No ALERT_EMAIL set, skipping alert"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "ERROR", "message": "scripts/fetch_hf.py failed: bufsize must be an integer"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "INFO", "message": "No ALERT_EMAIL set, skipping alert"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "ERROR", "message": "scripts/fetch_ipinfo.py failed: bufsize must be an integer"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "INFO", "message": "No ALERT_EMAIL set, skipping alert"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "ERROR", "message": "scripts/fetch_whois.py failed: bufsize must be an integer"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "INFO", "message": "No ALERT_EMAIL set, skipping alert"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "INFO", "message": "Creating ZIP archive ./dist/feeds_20251005095032.zip"}
+{"timestamp": "2025-10-05T09:50:32.502465", "level": "INFO", "message": "ZIP archive created: ./dist/feeds_20251005095032.zip"}
