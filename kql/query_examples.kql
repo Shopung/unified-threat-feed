@@ -1,0 +1,3 @@
+ThreatIntel
+| where type == "ip"
+| summarize count() by source

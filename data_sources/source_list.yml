@@ -1,0 +1,15 @@
+sources:
+  - name: Abuse.ch MalwareBazaar
+    url: https://mb-api.abuse.ch/api/v1/
+    type: json
+    enabled: true
+
+  - name: AlienVault OTX
+    url: https://otx.alienvault.com/api/v1/indicators/export
+    type: csv
+    enabled: true
+
+  - name: Feodo Tracker
+    url: https://feodotracker.abuse.ch/downloads/ipblocklist.csv
+    type: csv
+    enabled: true

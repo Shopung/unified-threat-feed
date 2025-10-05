@@ -1,0 +1,3 @@
+.create table ThreatIntel (ioc:string, type:string, source:string, first_seen:datetime, last_seen:datetime)
+.ingest inline into ThreatIntel <| 
+// Replace with the unified feed import logic
